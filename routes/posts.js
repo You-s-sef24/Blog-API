@@ -4,6 +4,7 @@ const {
   addPost,
   updatePost,
   deletePost,
+  toogleLike,
 } = require("../controllers/posts");
 const verifyToken = require("../middleware/verifyToken");
 const validatePost = require("../middleware/validatePost");
@@ -15,5 +16,6 @@ router
   .route("/:id")
   .put(verifyToken, validatePost(), updatePost)
   .delete(verifyToken, deletePost);
+router.post("/:id/likes", verifyToken, toogleLike);
 
 module.exports = router;
