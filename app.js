@@ -22,6 +22,11 @@ app.use(cors());
 app.use("/api/users", usersRouter);
 app.use("/api/posts", postsRouter);
 
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ message: "Something went wrong" });
+});
+
 app.listen(3000, () => {
   console.log("Server is running on port 3000");
 });

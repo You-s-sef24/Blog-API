@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Post = require("../models/post");
 const Like = require("../models/like");
 
-const toogleLike = async (req, res) => {
+const toogleLike = async (req, res, next) => {
   try {
     const postId = req.params.id;
     if (!mongoose.Types.ObjectId.isValid(postId)) {
@@ -28,24 +28,28 @@ const toogleLike = async (req, res) => {
     if (error.code === 11000) {
       return res.status(200).json({ message: "Liked" });
     }
-    return res.status(500).json({ message: "Something went wrong" });
+    next(error);
   }
 };
 
-const getLikesCount = async (req, res) => {
-  const postId = req.params.id;
+const getLikesCount = async (req, res, next) => {
+  try {
+    const postId = req.params.id;
 
-  if (!mongoose.Types.ObjectId.isValid(postId)) {
-    return res.status(400).json({ message: "Invalid post id" });
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ message: "Invalid post id" });
+    }
+
+    const existingPost = await Post.findOne({ _id: postId });
+    if (!existingPost) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    const likesCount = await Like.countDocuments({ postId });
+    return res.status(200).json({ likesCount });
+  } catch (error) {
+    next(error);
   }
-
-  const existingPost = await Post.findOne({ _id: postId });
-  if (!existingPost) {
-    return res.status(404).json({ message: "Post not found" });
-  }
-
-  const likesCount = await Like.countDocuments({ postId });
-  return res.status(200).json({ likesCount });
 };
 
 module.exports = { toogleLike, getLikesCount };
