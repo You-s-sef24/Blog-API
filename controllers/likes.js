@@ -32,4 +32,20 @@ const toogleLike = async (req, res) => {
   }
 };
 
-module.exports = toogleLike;
+const getLikesCount = async (req, res) => {
+  const postId = req.params.id;
+
+  if (!mongoose.Types.ObjectId.isValid(postId)) {
+    return res.status(400).json({ message: "Invalid post id" });
+  }
+
+  const existingPost = await Post.findOne({ _id: postId });
+  if (!existingPost) {
+    return res.status(404).json({ message: "Post not found" });
+  }
+
+  const likesCount = await Like.countDocuments({ postId });
+  return res.status(200).json({ likesCount });
+};
+
+module.exports = { toogleLike, getLikesCount };
