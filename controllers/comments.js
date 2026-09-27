@@ -1,5 +1,6 @@
 const Comment = require("../models/comment");
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
 const { validationResult } = require("express-validator");
 const Post = require("../models/post");
 
@@ -9,15 +10,40 @@ const getAllComments = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(postId)) {
       return res.status(400).json({ message: "Invalid post id" });
     }
-    const comments = await Comment.find({ postId });
 
-    if (comments.length === 0) {
-      return res.status(200).json({ message: "No comments found", comments });
+    const authHeader = req.headers.authorization;
+    let currentUserId = null;
+
+    if (authHeader) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        currentUserId = decoded.id;
+      } catch {}
     }
 
-    return res
-      .status(200)
-      .json({ message: "Comments retrieved successfully", comments });
+    const comments = await Comment.find({ postId }).populate("userId", "name");
+
+    const commentsWithOwnership = comments.map((comment) => ({
+      ...comment.toObject(),
+      isMine: currentUserId
+        ? String(comment.userId._id) === currentUserId
+        : false,
+    }));
+
+    if (commentsWithOwnership.length === 0) {
+      return res
+        .status(200)
+        .json({
+          message: "No comments found",
+          comments: commentsWithOwnership,
+        });
+    }
+
+    return res.status(200).json({
+      message: "Comments retrieved successfully",
+      comments: commentsWithOwnership,
+    });
   } catch (error) {
     next(error);
   }
@@ -47,6 +73,8 @@ const addComment = async (req, res, next) => {
       content,
     });
     await newComment.save();
+    await newComment.populate("userId", "name");
+
     return res
       .status(201)
       .json({ message: "Comment added successfully", newComment });

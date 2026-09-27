@@ -1,16 +1,43 @@
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const Like = require("../models/like");
 const Post = require("../models/post");
 const { validationResult } = require("express-validator");
 
 const getAllPosts = async (req, res, next) => {
   try {
-    const posts = await Post.find({}, { __v: 0 });
-    if (posts.length === 0) {
-      return res.status(200).json({ message: "No posts found", posts });
+    const authHeader = req.headers.authorization;
+    let currentUserId = null;
+
+    if (authHeader) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        currentUserId = decoded.id;
+      } catch {}
     }
-    return res
-      .status(200)
-      .json({ message: "Posts retrieved successfully", posts });
+
+    const posts = await Post.find({}, { __v: 0 }).populate("userId", "name");
+    const myLikes = currentUserId
+      ? await Like.find({ userId: currentUserId })
+      : [];
+    const likedPostIds = new Set(myLikes.map((like) => String(like.postId)));
+    const postsWithLikeStatus = posts.map((post) => ({
+      ...post.toObject(),
+      isLiked: likedPostIds.has(String(post._id)),
+      isMine: currentUserId ? String(post.userId._id) === currentUserId : false,
+    }));
+
+    if (postsWithLikeStatus.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No posts found", posts: postsWithLikeStatus });
+    }
+
+    return res.status(200).json({
+      message: "Posts retrieved successfully",
+      posts: postsWithLikeStatus,
+    });
   } catch (error) {
     next(error);
   }
@@ -33,6 +60,7 @@ const addPost = async (req, res, next) => {
     });
 
     await newPost.save();
+    await newPost.populate("userId", "name");
 
     return res
       .status(201)
