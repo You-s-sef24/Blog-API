@@ -22,7 +22,9 @@ const getAllComments = async (req, res, next) => {
       } catch {}
     }
 
-    const comments = await Comment.find({ postId }).populate("userId", "name");
+    const comments = await Comment.find({ postId })
+      .sort({ createdAt: -1 })
+      .populate("userId", "name");
 
     const commentsWithOwnership = comments.map((comment) => ({
       ...comment.toObject(),
@@ -32,12 +34,10 @@ const getAllComments = async (req, res, next) => {
     }));
 
     if (commentsWithOwnership.length === 0) {
-      return res
-        .status(200)
-        .json({
-          message: "No comments found",
-          comments: commentsWithOwnership,
-        });
+      return res.status(200).json({
+        message: "No comments found",
+        comments: commentsWithOwnership,
+      });
     }
 
     return res.status(200).json({

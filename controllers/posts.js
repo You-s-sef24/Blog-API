@@ -17,7 +17,9 @@ const getAllPosts = async (req, res, next) => {
       } catch {}
     }
 
-    const posts = await Post.find({}, { __v: 0 }).populate("userId", "name");
+    const posts = await Post.find({}, { __v: 0 })
+      .sort({ createdAt: -1 })
+      .populate("userId", "name");
     const myLikes = currentUserId
       ? await Like.find({ userId: currentUserId })
       : [];
