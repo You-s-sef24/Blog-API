@@ -3,6 +3,7 @@ const Token = require("../models/token");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 const { validationResult } = require("express-validator");
+const { default: mongoose } = require("mongoose");
 
 const getAllUsers = async (req, res, next) => {
   try {
@@ -18,9 +19,65 @@ const getAllUsers = async (req, res, next) => {
   }
 };
 
+const getProfile = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        message: "Invalid user ID",
+      });
+    }
+    const user = await User.findOne({ _id: userId }, { password: 0, __v: 0 });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "User retrived successfully", user });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const editProfile = async (req, res, next) => {
+  try {
+    const result = validationResult(req);
+
+    if (!result.isEmpty()) {
+      return res.status(400).json({
+        errors: result.array(),
+      });
+    }
+
+    const { name, bio } = req.body;
+    const updates = {};
+    if (name) updates.name = name;
+    if (bio) updates.bio = bio;
+
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: req.userId },
+      updates,
+      { returnDocument: "after" },
+    );
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const responseUser = updatedUser.toObject();
+    delete responseUser.password;
+
+    return res
+      .status(200)
+      .json({ message: "Profile updated successfully", user: responseUser });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, bio } = req.body;
 
     const result = validationResult(req);
 
@@ -42,6 +99,7 @@ const register = async (req, res, next) => {
       name,
       email,
       password: hashedPassword,
+      bio,
     });
 
     await newUser.save();
@@ -111,6 +169,8 @@ const logout = async (req, res, next) => {
 
 module.exports = {
   getAllUsers,
+  getProfile,
+  editProfile,
   register,
   login,
   logout,
