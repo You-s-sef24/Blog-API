@@ -18,5 +18,5 @@ router.post("/login", validateLogin(), login);
 router.post("/logout", verifyToken, logout);
 router.post("/register", validateRegister(), register);
 router.put("/me", verifyToken, validateProfile(), editProfile);
-router.get("/api/users/:id",getProfile);
+router.get("/:id",getProfile);
 module.exports = router;
