@@ -14,6 +14,16 @@ const validateRegister = () => {
       .withMessage("Email is required")
       .isEmail()
       .withMessage("Invalid email address"),
+    body("bio")
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 30 })
+      .withMessage("Bio must be between 1-30 characters"),
+    body("location")
+      .optional()
+      .trim()
+      .isLength({ min: 1, max: 30 })
+      .withMessage("Location must be between 1-30 characters"),
     body("password")
       .notEmpty()
       .withMessage("Password is required")

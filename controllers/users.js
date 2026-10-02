@@ -54,10 +54,11 @@ const editProfile = async (req, res, next) => {
       });
     }
 
-    const { name, bio } = req.body;
+    const { name, bio ,location} = req.body;
     const updates = {};
     if (name) updates.name = name;
     if (bio) updates.bio = bio;
+    if (location) updates.location = location;
 
     const updatedUser = await User.findOneAndUpdate(
       { _id: req.userId },
@@ -81,7 +82,7 @@ const editProfile = async (req, res, next) => {
 
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, bio } = req.body;
+    const { name, email, password, bio ,location} = req.body;
 
     const result = validationResult(req);
 
@@ -104,6 +105,7 @@ const register = async (req, res, next) => {
       email,
       password: hashedPassword,
       bio,
+      location
     });
 
     await newUser.save();

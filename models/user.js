@@ -16,6 +16,13 @@ const userSchema = new Schema(
       minlength: 1,
       maxlength: 30,
     },
+    location: {
+      type: String,
+      required: false,
+      trim: true,
+      minlength: 1,
+      maxlength: 30,
+    },
     email: {
       type: String,
       required: true,

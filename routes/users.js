@@ -11,6 +11,7 @@ const verifyToken = require("../middleware/verifyToken");
 const validateRegister = require("../middleware/valiateRegister");
 const validateLogin = require("../middleware/validateLogin");
 const validateProfile = require("../middleware/validateProfile");
+const { getUserPosts } = require("../controllers/posts");
 const router = Router();
 
 router.get("/", verifyToken, getAllUsers);
@@ -19,4 +20,5 @@ router.post("/logout", verifyToken, logout);
 router.post("/register", validateRegister(), register);
 router.put("/me", verifyToken, validateProfile(), editProfile);
 router.get("/:id",getProfile);
+router.get(`/:id/posts`, getUserPosts);
 module.exports = router;
