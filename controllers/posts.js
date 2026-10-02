@@ -54,19 +54,45 @@ const getUserPosts = async (req, res, next) => {
         message: "Invalid user ID",
       });
     }
-    const posts = await Post.find({ userId: userId }, { __v: 0 })
+
+    const authHeader = req.headers.authorization;
+    let currentUserId = null;
+
+    if (authHeader) {
+      try {
+        const token = authHeader.split(" ")[1];
+        const decoded = jwt.verify(token, process.env.SECRET_KEY);
+        currentUserId = decoded.id;
+      } catch {}
+    }
+
+    const posts = await Post.find({ userId }, { __v: 0 })
       .sort({ createdAt: -1 })
       .populate("userId", "name");
 
-    if (posts.length === 0) {
-      return res
-        .status(200)
-        .json({ message: "No posts found for this user", posts });
+    const myLikes = currentUserId
+      ? await Like.find({ userId: currentUserId })
+      : [];
+
+    const likedPostIds = new Set(myLikes.map((like) => String(like.postId)));
+
+    const postsWithLikeStatus = posts.map((post) => ({
+      ...post.toObject(),
+      isLiked: likedPostIds.has(String(post._id)),
+      isMine: currentUserId ? String(post.userId._id) === currentUserId : false,
+    }));
+
+    if (postsWithLikeStatus.length === 0) {
+      return res.status(200).json({
+        message: "No posts found",
+        posts: postsWithLikeStatus,
+      });
     }
 
-    return res
-      .status(200)
-      .json({ message: "User posts retrieved successfully", posts });
+    return res.status(200).json({
+      message: "Posts retrieved successfully",
+      posts: postsWithLikeStatus,
+    });
   } catch (error) {
     next(error);
   }
