@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 const { validationResult } = require("express-validator");
 const { default: mongoose } = require("mongoose");
+const Post = require("../models/post");
 
 const getAllUsers = async (req, res, next) => {
   try {
@@ -29,12 +30,15 @@ const getProfile = async (req, res, next) => {
       });
     }
     const user = await User.findOne({ _id: userId }, { password: 0, __v: 0 });
+    const postsCount = await Post.countDocuments({ userId: userId });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    res.status(200).json({ message: "User retrived successfully", user });
+    res
+      .status(200)
+      .json({ message: "User retrived successfully", user, postsCount });
   } catch (error) {
     next(error);
   }

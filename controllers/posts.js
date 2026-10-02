@@ -45,6 +45,33 @@ const getAllPosts = async (req, res, next) => {
   }
 };
 
+const getUserPosts = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({
+        message: "Invalid user ID",
+      });
+    }
+    const posts = await Post.find({ userId: userId }, { __v: 0 })
+      .sort({ createdAt: -1 })
+      .populate("userId", "name");
+
+    if (posts.length === 0) {
+      return res
+        .status(200)
+        .json({ message: "No posts found for this user", posts });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "User posts retrieved successfully", posts });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const addPost = async (req, res, next) => {
   try {
     const { content } = req.body;
@@ -150,4 +177,5 @@ module.exports = {
   addPost,
   deletePost,
   updatePost,
+  getUserPosts,
 };
